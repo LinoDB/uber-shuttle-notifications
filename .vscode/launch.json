@@ -1,0 +1,76 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "shuttle-notifications build & run",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/src/index.ts",
+            "runtimeArgs": [
+                "--env-file=.env"
+            ],
+            "args": [
+                // <telegram_bot_token>
+                // "-v",
+                // "-r",
+                // "<refresh_rate>",
+                // "-c",
+                // "./path/to/cookies.sqlite",
+                // "-f",
+                // "-p",
+                // "./path/to/private_key.pem",
+                // "-t",
+                // "./path/to/certificate.pem"
+                // "-w",
+                // "<webhook_url>",
+                // "-d",
+                // "-s",
+                // "<telegram_secret>",
+            ],
+            "outFiles": [
+                "${workspaceFolder}/built/**/*.js"
+            ],
+            "console": "integratedTerminal",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "create_database build & run",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/src/create_database.ts",
+            "args": [
+                // "<user_id>"
+                // "<user_name>"
+                // "<user_is_admin: true | false>"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/built/**/*.js"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "extract_cookies build & run",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/src/extract_cookies.ts",
+            "args": [
+                // "./specific/path/to/cookies database/to/use/first"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/built/**/*.js"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
