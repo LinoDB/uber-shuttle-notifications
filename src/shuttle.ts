@@ -486,7 +486,7 @@ class Shuttle {
                 "Welcome! To use the *Uber Shuttle Notification* service, " +
                 "you need to be added first. Send a message with _join_ to " +
                 "notify admins.\nDisclaimer: Admins will be able to see your " +
-                "user name.",
+                "user name and user Id.",
                 chat_id,
                 this
             );

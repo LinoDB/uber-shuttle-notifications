@@ -19,10 +19,10 @@
                 // "-r",
                 // "<refresh_rate>",
                 // "-c",
-                // "./path/to/cookies.sqlite",
+                // "/path/to/cookies.sqlite",
                 // "-f",
                 // "-p",
-                // "./path/to/private_key.pem",
+                // "/path/to/private_key.pem",
                 // "-t",
                 // "./path/to/certificate.pem"
                 // "-w",
@@ -65,7 +65,7 @@
             "preLaunchTask": "tsc: build - tsconfig.json",
             "program": "${workspaceFolder}/src/extract_cookies.ts",
             "args": [
-                // "./specific/path/to/cookies database/to/use/first"
+                // "/specific/path/to/cookies database/to/use/first/cookies.sqlite"
             ],
             "outFiles": [
                 "${workspaceFolder}/built/**/*.js"
