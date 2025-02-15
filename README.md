@@ -1,8 +1,10 @@
 # Uber shuttle notifications via Telegram
 
-This is a project to receive notifications for corporate uber shuttle services via Telegram. The schedule data is fetched from the uber website using user session cookies. This allows the service to check if new days were added to the schedule or if seats were freed up recently. Notifications are then send to the user via Telegram, being an alternative to manually refreshing the schedule data on the uber app or website.
+This is a project to receive notifications for corporate uber shuttle services via Telegram. The schedule data is fetched from the uber website using user session cookies. This allows the service to check whether new days were added to the schedule or if seats were freed up recently. Notifications are then send to the user via Telegram, being an alternative to manually refreshing the schedule data on the uber app or website.
 
 Telegram is used for the update notifications because of its free to use API.
+
+ <img src="misc/example.png" alt="App example" width="500">
 
 
 ## Interactions with uber
@@ -54,7 +56,7 @@ npm run build
 
 Telegram bots are public by default. When using this app, users have to be added to a user database manually to ensure privacy. The owner of the app and group admins have access to the public Telegram account name and the Telegram Id of all users. To start out, add an admin to the user database. The Telegram Id of a user can be found by sending a message to the Telegram bot and opening _<span>https</span>://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates_ in a browser. Here appear all messages that reached the bot and weren't yet processed. The user Id can be found under `result[0].message.from.id`.
 
-Other users can be later added to the user group through messages sent to the bot via Telegram by an admin.
+Other users can be added to the user group later through messages sent to the bot via Telegram.
 
 Use the VSCode launch configuration `create_database build & run` or run
 
@@ -83,14 +85,14 @@ Use the VSCode launch configuration `shuttle-notifications build & run` or run
 node --env-file=.env built/index.js
 ```
 
-You can use the a _.env_ file to define inputs as environment variables (use _.env.template_ and rename it to _.env_) or use command line arguments instead. When both are given, CL parameters will have priority. These are the parameters that can be used:
+You can use the _.env_ file to define inputs as environment variables (use _.env.template_ and rename it to _.env_) or use command line arguments instead. When both are given, CL parameters will have priority. These are the parameters that can be used:
 
 | Environment variable | CL parameter | Function |
 | --- | --- | --- |
 | TELEGRAM_BOT_TOKEN |  | [Mandatory] CL parameter at first position. |
 | SHUTTLE_VERBOSE | -v | [Optional] Flag parameter indicating increased verbosity. |
 | SHUTTLE_REFRESH_RATE | -r \<refresh rate\> | [Optional] Rational number defining the resfresh rate for fetching uber updates in minutes. Default is 5.0. |
-| SHUTTLE_COOKIES_PATH | -c \<cookie database path\> | [Optional] Path to the Firefox cookie database. Searches for the database at the default locations on Windows or Linux when not specified. |
+| SHUTTLE_COOKIES_PATH | -c \<cookie database path\> | [Optional] Path to the Firefox cookie database. Searches for the database at the default locations on Windows and Linux when not specified. |
 | SHUTTLE_FETCH | -f | Flag parameter. Use this to fetch updates constantly instead of setting up a server and a webhook. |
 | SHUTTLE_PRIVATE_KEY | -p \<private key path\> | Defines the path to the private key when using a server and a webhook. This parameter is mandatory when **-f** is not set. |
 | SHUTTLE_CERTIFICATE | -t \<certificate path\> | Defines the path to the certificate when using a server and a webhook. This parameter is mandatory when **-f** is not set. |
@@ -103,16 +105,16 @@ The environment variables from  _.env_ that needn't be used can just be omitted.
 Using CL parameters, an MWE with a refresh rate of 30s would look like this:
 
 ```bash
-node built/index.js <TELEGRAM_BOT_TOKEN> -f -r .5
+node built/index.js <TELEGRAM_BOT_TOKEN> -f -r 0.5
 ```
 
 ## Subscibe to a route
 
-Send a message to the bot like **add routename** to start receiving notifications or **stop all** to stop receiving notifications. Send **help** for a user guide. For admins, sending **admin** prints a user guide for admins as well.
+Send the message **_add \<routename\>_** to the bot to start receiving notifications and **_stop all_** to stop receiving notifications. Send **_help_** for a user guide. For admins, sending **_admin_** prints a user guide as well.
 
 ## Add other users
 
-Other Telegram users can send the message **join** to the bot to request being added to the user group. An admin has to add them manually. Users can also be blocked.
+Other Telegram users can send the message **_join_** to the bot to request being added to the user group. An admin has to add them manually. Users can also be blocked.
 
 
 # Other functions
