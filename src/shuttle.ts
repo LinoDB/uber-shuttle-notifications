@@ -171,6 +171,7 @@ class Shuttle {
                 this.schedules[route.route], route.route, this, true
             );
         }
+        setInterval(this.#route_cleanup, 24 * 60 * 60 * 1000, this);
         console.info(`Current time: ${new Date()}`);
     }
 
@@ -473,6 +474,18 @@ class Shuttle {
         return true;
     }
 
+    #route_cleanup(instance: Shuttle) {
+        const due_date = new Date();
+        due_date.setDate(-14);
+        for(const route in instance.schedules) {
+            for(const date in instance.schedules[route]) {
+                if(due_date > instance.schedules[route][date]["added"]) {
+                    delete instance.schedules[route][date];
+                }
+            }
+        }
+    }
+
     async #check_user(chat_id: string, name: string): Promise<boolean[]> {
         const res = await this.db.query(
             `SELECT blocked, pending FROM users WHERE chat_id = ${chat_id};`
@@ -679,12 +692,12 @@ class Shuttle {
             for(const route of routes) {
                 if(this.schedules[route]) {
                     for(const day in this.schedules[route]) {
-                        if(this.schedules[route][day] != 0) {
+                        if(this.schedules[route][day]["seats"] != 0) {
                             const weekday = Shuttle.helper_split(day, ' ')[0];
                             if(days.includes(weekday)) {
                                 already_available.push(
                                     `*${route}*\n` +
-                                    this.schedules[route][day] +
+                                    this.schedules[route][day]["seats"] +
                                     ` Seats are already available for ${day}`
                                 );
                             }
@@ -1359,7 +1372,7 @@ class Shuttle {
                 }
                 await instance.check_new_days(new_schedule, route, instance);
                 await instance.check_new_seats(new_schedule, route, instance);
-                instance.schedules[route] = new_schedule;
+                instance.update_schedule(new_schedule, route);
                 return;
             }
             catch(e) {
@@ -1376,6 +1389,7 @@ class Shuttle {
 
     parse_schedule(schedule_arr: Schedule[], instance: Shuttle) {
         let schedule = {};
+        const  today = new Date();
         let base_day = new Date();
         let last_day: string;
         for(const day of schedule_arr){
@@ -1400,14 +1414,26 @@ class Shuttle {
                 "."
             );
             if(schedule[date_str] !== undefined) {
-                schedule[date_str] += day.seatsAvailable;
+                schedule[date_str]["seats"] += day.seatsAvailable;
             }
             else {
-                schedule[date_str] = day.seatsAvailable;
+                schedule[date_str] = {
+                    seats: day.seatsAvailable,
+                    added: today
+                };
             }
             last_day = day.day;
         }
         return schedule;
+    }
+
+    update_schedule(new_schedule: any, route: string) {
+        if(!this.schedules[route]) {
+            this.schedules[route] = {};
+        }
+        for(const date in new_schedule) {
+            this.schedules[route][date] = new_schedule[date];
+        }
     }
 
     async check_new_days(new_schedule: any, route: string, instance: Shuttle) {
@@ -1470,22 +1496,22 @@ class Shuttle {
         }
         for(const day in instance.schedules[route]) {
             if(
-                (instance.schedules[route][day] === 0 || initial)
+                (instance.schedules[route][day]["seats"] === 0 || initial)
                 && new_schedule[day]
-                && new_schedule[day] != 0
+                && new_schedule[day]["seats"] != 0
             ) {
                 const weekday = Shuttle.helper_split(day, ' ')[0];
                 for(const rec in routes) {
                     if(routes[rec][weekday]) {
                         if(recipients[rec]) {
                             recipients[rec].push(
-                                `*${route}*\n*${new_schedule[day]}* ` +
+                                `*${route}*\n*${new_schedule[day]["seats"]}* ` +
                                 `free seats on ${day}`
                             );
                         }
                         else {
                             recipients[rec] = [
-                                `*${route}*\n*${new_schedule[day]}* ` +
+                                `*${route}*\n*${new_schedule[day]["seats"]}* ` +
                                 `free seats on ${day}`
                             ];
                         }
