@@ -568,6 +568,9 @@ class Shuttle {
             case "add":
                 this.#request_add(chat_id, request_arr);
                 break;
+            case "get":
+                this.#request_get(chat_id, request_arr);
+                break;
             case "stop":
                 this.#request_stop(chat_id, request_arr);
                 break;
@@ -647,7 +650,7 @@ class Shuttle {
                 for(const par of param_arr) {
                     if(!Object.keys(this.weekdays_index).includes(par)) {
                         this.send_notification(
-                            `*Error:* Unknown day parameter ${par}`,
+                            `*Error:* Unknown day parameter '${par}'`,
                             chat_id,
                             this
                         );
@@ -710,6 +713,79 @@ class Shuttle {
             msg = msg.concat(already_available);
         }
         this.send_notification(msg.join('\n'), chat_id, this);
+    }
+
+    async #request_get(
+        chat_id: string,
+        request_arr: string[]
+    ): Promise<undefined> {
+        if(request_arr.length ===  0) {
+            this.send_notification(
+                'Please enter a route parameter. ' +
+                'Type _help_ to see the instructions.',
+                chat_id,
+                this
+            );
+            return;
+        }
+        const route_request = request_arr.shift();
+        const routes_arr = Shuttle.helper_split(route_request, ',');
+        let routes = [];
+        for(const rout_arr of routes_arr) {
+            routes = routes.concat(this.#parse_routes(rout_arr));
+        }
+        if(routes.length ===  0) {
+            this.send_notification(
+                `*Error:* Couldn't find route '${route_request}'`, chat_id, this
+            );
+            return;
+        }
+        let days = Object.keys(this.weekdays_index);
+        while(request_arr.length > 0) {
+            let param = request_arr.shift();
+            if(param.startsWith('days=')) {
+                param = param.slice(5);
+                let param_arr = Shuttle.helper_split(param, ',');
+                param_arr = param_arr.map((p: string) => Shuttle.capitalize(p));
+                for(const par of param_arr) {
+                    if(!Object.keys(this.weekdays_index).includes(par)) {
+                        this.send_notification(
+                            `*Error:* Unknown day parameter '${par}'`,
+                            chat_id,
+                            this
+                        );
+                        return;
+                    }
+                }
+                days = param_arr;
+            }
+        }
+        let msg = [];
+        for(const route of routes) {
+            const schedule = await this.#get_updates(
+                route, this, false, true
+            );
+            let route_msg = [];
+            route_msg.push(`*${route}*`);
+            if(schedule) {
+                for(const date in schedule) {
+                    let match;
+                    if((match = /^\w+/.exec(date)) && days.includes(match[0])) {
+                        route_msg.push(
+                            '`' +
+                            schedule[date]["seats"].toString().padStart(2, " ") +
+                            `\` seats - ${date.replace(match[0], "").trim()} ` +
+                            match[0]
+                        );
+                    }
+                }
+            }
+            if(route_msg.length === 1) {
+                route_msg.push('_No data found_');
+            }
+            msg.push(route_msg.join('\n'));
+        }        
+        this.send_notification(msg.join('\n\n'), chat_id, this);
     }
 
     async #request_stop(chat_id: string, request_arr: string[]) {
@@ -939,6 +1015,9 @@ class Shuttle {
             "*stop* (stop a subscription for a specific route or 'all')\n\n" +
             "_message style_: stop $routes|all\n" +
             "_message example_: stop all\n\n" +
+            "*get* (get current schedule for a specific route and day)\n\n" +
+            "_message style_: get $routes [days=$days]\n\n" +
+            "_message example_: get -Destination1,Destination2 days=Friday,Thursday\n\n" +
             "*info* (see all you subscriptions and their configurations)\n\n" +
             "_message_: info\n\n" +
             "*status* (see all active subscriptions for all users)\n\n" +
@@ -1332,7 +1411,8 @@ class Shuttle {
     async #get_updates(
         route: string,
         instance: Shuttle,
-        initial: boolean = false
+        initial: boolean = false,
+        user_request: boolean = false
     ): Promise<any> {
         const og_dest = Shuttle.helper_split(route, '-');
         for(let i = 1; i <= 3; i++) {
@@ -1367,7 +1447,7 @@ class Shuttle {
                 const new_schedule = instance.parse_schedule(
                     response.data.hcvSchedules.schedules, instance
                 );
-                if(initial) {
+                if(initial || user_request) {
                     return new_schedule;
                 }
                 await instance.check_new_days(new_schedule, route, instance);
@@ -1384,6 +1464,9 @@ class Shuttle {
         }
         if(initial) {
             throw Error("Initial schedules couldn't be fetched");
+        }
+        if(user_request) {
+            return null;
         }
     }
 
