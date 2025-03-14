@@ -8,7 +8,8 @@ import sqlite3 from 'sqlite3';
 
 interface Schedule {
     day: string,
-    seatsAvailable: string
+    seatsAvailable: string,
+    formattedETA: string,
 }
 
 
@@ -171,7 +172,6 @@ class Shuttle {
                 this.schedules[route.route], route.route, this, true
             );
         }
-        setInterval(this.#route_cleanup, 24 * 60 * 60 * 1000, this);
         console.info(`Current time: ${new Date()}`);
     }
 
@@ -472,18 +472,6 @@ class Shuttle {
             return secret === this.#secret ? true : false;
         }
         return true;
-    }
-
-    #route_cleanup(instance: Shuttle) {
-        const due_date = new Date();
-        due_date.setDate(-14);
-        for(const route in instance.schedules) {
-            for(const date in instance.schedules[route]) {
-                if(due_date > instance.schedules[route][date]["added"]) {
-                    delete instance.schedules[route][date];
-                }
-            }
-        }
     }
 
     async #check_user(chat_id: string, name: string): Promise<boolean[]> {
@@ -1472,10 +1460,13 @@ class Shuttle {
 
     parse_schedule(schedule_arr: Schedule[], instance: Shuttle) {
         let schedule = {};
-        const  today = new Date();
         let base_day = new Date();
         let last_day: string;
         for(const day of schedule_arr){
+            const eta = /(\d+):(\d+)\s*(\w+)/.exec(day.formattedETA);
+            let hours = parseInt(eta[1]);
+            if(eta[3] === 'pm') hours += 12;
+            base_day.setHours(hours, parseInt(eta[2]));
             if(last_day !== day.day) {
                 if(day.day === "Tomorrow") {
                     base_day.setDate(base_day.getDate() + 1);
@@ -1502,7 +1493,7 @@ class Shuttle {
             else {
                 schedule[date_str] = {
                     seats: day.seatsAvailable,
-                    added: today
+                    eta: new Date(base_day.getTime()),
                 };
             }
             last_day = day.day;
@@ -1516,6 +1507,15 @@ class Shuttle {
         }
         for(const date in new_schedule) {
             this.schedules[route][date] = new_schedule[date];
+        }
+        const now = new Date();
+        for(const date of Object.keys(this.schedules[route])) {
+            if(
+                !new_schedule[date] &&
+                this.schedules[route][date]["eta"] < now
+            ) {
+                delete this.schedules[route][date];
+            }
         }
     }
 
